@@ -17,8 +17,9 @@ Make sure you have the following setup before using ImageManager:
 
 Install the required packages using the following command:
 
+```
 pip install azure-cognitiveservices-vision-customvision msrest requests argparse
-
+```
 
 ## Configuration
 
@@ -46,8 +47,9 @@ The ImageManager.py script supports the following command line arguments:
 
 Upload images to a Custom Vision project:
 
+```
 python ImageManager.py -upload -project "Project Name" -folder "/path/to/input/folder" [-have_tag "tag_name"] [-only_tag "tag_name"]
-
+```
 
 Replace "Project Name" with the name of your Custom Vision project, "/path/to/input/folder" with the path to the folder containing the images, and "tag_name" with the tag name(s) you are interested in. The -have_tag and -only_tag arguments are optional.
 
@@ -55,8 +57,9 @@ Replace "Project Name" with the name of your Custom Vision project, "/path/to/in
 
 Download images from a specific Custom Vision project:
 
+```
 python ImageManager.py -export -project "Project Name" -folder "/path/to/output/folder" [-have_tag "tag_name"] [-only_tag "tag_name"]
-
+```
 
 Replace "Project Name" with the name of your Custom Vision project, "/path/to/output/folder" with the path to the folder where you want to save the downloaded images, and "tag_name" with the tag name(s) you are interested in. The -have_tag and -only_tag arguments are optional.
 
