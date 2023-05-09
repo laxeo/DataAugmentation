@@ -65,5 +65,5 @@ Replace "<b>Project Name</b>" with the name of your Custom Vision project, "<b>/
 
 ## Notes
 
-- The input folder for uploading images should contain an image_regions.json file with the region information for the images.
+- The input folder for uploading images should contain an <b>image_regions.json</b> file with the region information for the images.
 - When downloading images, the output folder will be created if it does not exist. The downloaded images and their region information will be saved in this folder.
