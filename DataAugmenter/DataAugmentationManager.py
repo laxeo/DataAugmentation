@@ -1,7 +1,6 @@
 import albumentations as A
 import cv2
 import json
-import ImageVisualization_v2
 import os
 
 
@@ -62,13 +61,13 @@ class ImageTransformer:
         self.transformed_bboxes = transformed['bboxes']
 
     def save_image(self, output_folder):
+        
+        file_name = f"{self.image_name}_t_{self.index}"
 
-        print("Saving Image: " + self.image_name)
+        print("Saving Image: " + file_name)
 
         # save image
         os.makedirs(output_folder, exist_ok=True)
-
-        file_name = f"{self.image_name}_t_{self.index}"
 
         image_path = os.path.join(output_folder, file_name + ".jpg")
 
@@ -79,8 +78,8 @@ class ImageTransformer:
 
         self.index += 1
 
-    def save_image_regions(self, output_folder):
-        print("Saving Region Info...")
+    def save_image_regions(self):
+        print(f"Saving Region Info for {self.image_name}")
 
         # convert bboxes back to customvision.ai format
         image_regions = self.bboxes_postprocessing()
@@ -95,8 +94,5 @@ class ImageTransformer:
                 )
             )
         }
-
-        with open(os.path.join(output_folder, "image_regions.json"), "w") as json_file:
-            json.dump(sorted_image_regions, json_file)
-
-        print("Completed")
+        
+        return sorted_image_regions
