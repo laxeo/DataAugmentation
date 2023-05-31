@@ -9,6 +9,7 @@ class CustomVisionManager:
     def __init__(self, trainer, predictor):
         self.trainer = trainer
         self.predictor = predictor
+        self.tagged_images = []
 
     def get_project_by_name(self, project_name):
         print("Getting Project Info")
@@ -45,7 +46,23 @@ class CustomVisionManager:
         with open(json_file_path, "r") as json_file:
             image_regions = json.load(json_file)
         return image_regions
+    
+    def get_all_tagged_images(self, project_id):
+        print("Getting Tagged Images Info")
 
+        skip = 0
+        take = 50  # Maximum number of images per request
+
+        while True:
+            batch_images = self.trainer.get_tagged_images(
+                project_id, skip=skip, take=take, with_regions=True)
+            
+            if len(batch_images) == 0:
+                break  # No more images to fetch
+
+            self.tagged_images.extend(batch_images)
+            skip += take  # Skip the images we've already fetched
+            
     def add_images_with_regions(self, project_id, image_regions, input_folder, have_tag=None, only_tag=None):
         if not have_tag and only_tag:
             have_tag = only_tag
@@ -70,7 +87,7 @@ class CustomVisionManager:
                     raise ValueError(
                         f"Tag: '{tag}' not found in exisiting tags")
                 regions.append(Region(tag_id=tag_id, left=x,
-                               top=y, width=w, height=h))
+                            top=y, width=w, height=h))
 
             if have_tag and have_tag not in tags:
                 continue
@@ -85,30 +102,31 @@ class CustomVisionManager:
                 continue
 
             index += 1
+        print(f"Total Images to upload {index}...")
 
-        print(f"Uploading {index} Images...")
+        # uploading images in chunks of 64 images per batch (maximum 64)
+        for i in range(0, len(tagged_images_with_regions), 64):
+            chunk = tagged_images_with_regions[i:i+64]
+            try:
+                upload_result = self.trainer.create_images_from_files(
+                    project_id, ImageFileCreateBatch(images=chunk))
+            except CustomVisionErrorException:
+                print(f"Error: No File uploaded for chunk starting at index {i}")
+                exit(-1)
 
-        # Print Result:
-        try:
-            upload_result = self.trainer.create_images_from_files(
-                project_id, ImageFileCreateBatch(images=tagged_images_with_regions))
-        except CustomVisionErrorException:
-            print("Error: No File uploaded")
-            exit(-1)
+            sorted_images = sorted(upload_result.images,
+                                key=lambda image: image.source_url)
 
-        sorted_images = sorted(upload_result.images,
-                               key=lambda image: image.source_url)
-
-        sorted_images = sorted(
-            upload_result.images,
-            key=lambda image: (
-                image.source_url.rsplit('_', 1)[0],
-                int(image.source_url.rsplit('_', 1)[1])
+            sorted_images = sorted(
+                upload_result.images,
+                key=lambda image: (
+                    image.source_url.rsplit('_', 1)[0],
+                    int(image.source_url.rsplit('_', 1)[1])
+                )
             )
-        )
 
-        for image in sorted_images:
-            print(f"Image file: {image.source_url} | Status: {image.status}")
+            for image in sorted_images:
+                print(f"Image file: {image.source_url} | Status: {image.status}")
 
     def download_images_and_regions(self, project_id, output_folder, have_tag=None, only_tag=None):
         if not have_tag and only_tag:
@@ -116,11 +134,9 @@ class CustomVisionManager:
 
         output_folder = output_folder
         os.makedirs(output_folder, exist_ok=True)
-        tagged_images_with_regions = self.trainer.get_tagged_images(
-            project_id, with_regions=True)
 
         if have_tag:
-            tagged_images_with_regions = [img for img in tagged_images_with_regions if any(
+            self.tagged_images = [img for img in self.tagged_images if any(
                 region.tag_name == have_tag for region in img.regions)]
 
         image_regions = {}
@@ -130,7 +146,7 @@ class CustomVisionManager:
         print("Downloading images...")
 
         index = -1
-        for index, image in enumerate(tagged_images_with_regions, start=0):
+        for index, image in enumerate(self.tagged_images, start=0):
 
             image_url = image.original_image_uri
 

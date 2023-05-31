@@ -5,10 +5,10 @@ from CustomVisionManager import CustomVisionManager
 import argparse
 
 # Replace with valid values
-ENDPOINT = ""
-training_key = ""  # key1
-prediction_key = ""  # key2
-prediction_resource_id = ""
+ENDPOINT =
+training_key =  # key1
+prediction_key =  # key2
+prediction_resource_id = 
 
 print("Creating Credentials")
 credentials = ApiKeyCredentials(in_headers={"Training-key": training_key})
@@ -16,12 +16,6 @@ trainer = CustomVisionTrainingClient(ENDPOINT, credentials)
 prediction_credentials = ApiKeyCredentials(
     in_headers={"Prediction-key": prediction_key})
 predictor = CustomVisionPredictionClient(ENDPOINT, prediction_credentials)
-
-# Important Parameters:
-# project_name = "Demo Test"
-# tag_name = "fork"
-# output_folder = os.path.join(os.path.dirname(__file__), "Images", "exported_images")
-# input_folder = os.path.join(os.path.dirname(__file__), "Images", "input_images")
 
 # Initialize CustomVision Manager
 manager = CustomVisionManager(trainer, predictor)
@@ -61,6 +55,8 @@ if args.export:
     only_tag = args.only_tag
 
     project = manager.get_project_by_name(project_name)
+    
+    manager.get_all_tagged_images(project.id)
 
     manager.download_images_and_regions(
         project.id, output_folder, have_tag=have_tag, only_tag=only_tag)
