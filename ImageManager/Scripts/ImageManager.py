@@ -5,10 +5,10 @@ from CustomVisionManager import CustomVisionManager
 import argparse
 
 # Replace with valid values
-ENDPOINT =
-training_key =  # key1
-prediction_key =  # key2
-prediction_resource_id = 
+ENDPOINT = ""
+training_key = ""  # key1
+prediction_key = ""  # key2
+prediction_resource_id = ""
 
 print("Creating Credentials")
 credentials = ApiKeyCredentials(in_headers={"Training-key": training_key})
@@ -26,6 +26,7 @@ parser.add_argument("-upload", action="store_true",
                     help="Upload images to Custom Vision")
 parser.add_argument("-export", action="store_true",
                     help="Download images from specific project")
+parser.add_argument("-dlt", action="store_true", help="Delete images from Custom Vision based on tags or untagged images")
 parser.add_argument("-project", type=str, help="Project Name")
 parser.add_argument("-have_tag", type=str,
                     help="Specify an unique Tag name that the images must include in")
@@ -60,3 +61,17 @@ if args.export:
 
     manager.download_images_and_regions(
         project.id, output_folder, have_tag=have_tag, only_tag=only_tag)
+    
+if args.dlt:
+    project_name = args.project
+    have_tag = args.have_tag
+
+    project = manager.get_project_by_name(project_name)
+    
+    if have_tag is None:
+        manager.get_all_untagged_images(project.id)
+    else:
+        manager.get_all_tagged_images(project.id)
+    
+    manager.delete_images(project.id, have_tag=have_tag)
+

@@ -9,7 +9,7 @@ class CustomVisionManager:
     def __init__(self, trainer, predictor):
         self.trainer = trainer
         self.predictor = predictor
-        self.tagged_images = []
+        self.target_images = []
 
     def get_project_by_name(self, project_name):
         print("Getting Project Info")
@@ -51,7 +51,7 @@ class CustomVisionManager:
         print("Getting Tagged Images Info")
 
         skip = 0
-        take = 50  # Maximum number of images per request
+        take = 256  # Maximum number of images per request
 
         while True:
             batch_images = self.trainer.get_tagged_images(
@@ -60,8 +60,25 @@ class CustomVisionManager:
             if len(batch_images) == 0:
                 break  # No more images to fetch
 
-            self.tagged_images.extend(batch_images)
+            self.target_images.extend(batch_images)
             skip += take  # Skip the images we've already fetched
+    
+    def get_all_untagged_images(self, project_id):
+        print("Getting Untagged Images Info")
+
+        skip = 0
+        take = 256  # Maximum number of images per request
+        
+        while True:
+            batch_images = self.trainer.get_untagged_images(
+                project_id, skip=skip, take=take)
+            
+            if len(batch_images) == 0:
+                break
+            
+            self.target_images.extend(batch_images)
+            skip += take
+            print(f"Total images fetched: {len(self.target_images)}")
             
     def add_images_with_regions(self, project_id, image_regions, input_folder, have_tag=None, only_tag=None):
         if not have_tag and only_tag:
@@ -136,7 +153,7 @@ class CustomVisionManager:
         os.makedirs(output_folder, exist_ok=True)
 
         if have_tag:
-            self.tagged_images = [img for img in self.tagged_images if any(
+            self.target_images = [img for img in self.target_images if any(
                 region.tag_name == have_tag for region in img.regions)]
 
         image_regions = {}
@@ -146,7 +163,7 @@ class CustomVisionManager:
         print("Downloading images...")
 
         index = -1
-        for index, image in enumerate(self.tagged_images, start=0):
+        for index, image in enumerate(self.target_images, start=0):
 
             image_url = image.original_image_uri
 
@@ -212,3 +229,24 @@ class CustomVisionManager:
         print("Completed")
 
         return image_regions
+    
+    def delete_images(self, project_id, have_tag=None):
+        print("Deleting Images...")
+        images_to_delete = self.target_images
+        if have_tag:
+            images_to_delete = [img for img in self.target_images if any(
+                region.tag_name == have_tag for region in img.regions)]
+        
+        # Batch operation for deletion since a request can handle a max of 256 images
+        DELETE_BATCH_SIZE = 200
+        for i in range(0, len(images_to_delete), DELETE_BATCH_SIZE):
+            batch = images_to_delete[i:i + DELETE_BATCH_SIZE]
+            batch_ids = [img.id for img in batch]
+            
+            try:
+                # Using the trainer's delete method
+                self.trainer.delete_images(project_id, image_ids=batch_ids)
+            except CustomVisionErrorException as e:
+                print(f"Error deleting images in batch starting at index {i}: {e}")
+                continue  # Continue with the next batch even if the current batch fails
+
