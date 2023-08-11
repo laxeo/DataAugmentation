@@ -5,9 +5,13 @@ from CustomVisionManager import CustomVisionManager
 import argparse
 
 # Replace with valid values
+
+# Azure -> Custom Vision -> Project -> API Key
 ENDPOINT = ""
 training_key = ""  # key1
 prediction_key = ""  # key2
+
+# Custom Vision Setting
 prediction_resource_id = ""
 
 print("Creating Credentials")
